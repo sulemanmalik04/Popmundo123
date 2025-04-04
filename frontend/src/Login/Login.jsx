@@ -1,58 +1,92 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import './Login.css';
 
-const Login = ({ onLogin }) => {
-  const [formData, setFormData] = useState({ username: '', password: '' });
-  const [error, setError] = useState('');
-  const navigate = useNavigate(); // For navigation
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:5000/api/users/login', formData);
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('userID', response.data.userID); // Save the userID
-      onLogin();
-      navigate('/play');
-    } catch (error) {
-      if (error.response && error.response.status === 400) {
-        setError('User not found. Please register first.');
-      } else {
-        setError(error.response?.data.message || 'Error logging in');
-      }
-    }
-  };
+function Login() {
+  // State for form fields
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   
+  // Timer state (set to 60 seconds initially)
+  const [timeLeft, setTimeLeft] = useState(60);
 
-  const handleRegisterRedirect = () => {
-    navigate('/register'); // Redirect to the Register page
+  // Countdown timer effect
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      alert('Time is up! Please try logging in again.');
+      resetForm();
+      return;
+    }
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prevTime) => prevTime - 1);
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [timeLeft]);
+
+  // Simple form validation
+  const isFormValid = username.trim().length > 0 && password.trim().length > 0;
+
+  // Reset form and timer
+  const resetForm = () => {
+    setUsername('');
+    setPassword('');
+    setTimeLeft(60);
+  };
+
+  // Form submit handler
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    
+    if (!isFormValid) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    // Replace with your own login logic or API call.
+    console.log('Logging in with:', { username, password });
+
+    // Reset form after "submission"
+    resetForm();
+    alert('Login submitted!');
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <div className="login-container">
       <h2>Login</h2>
-      <input
-        type="text"
-        placeholder="Username"
-        value={formData.username}
-        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={formData.password}
-        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-      />
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <button type="submit">Login</button>
-        <button type="button" onClick={handleRegisterRedirect}>
-          Register
-        </button>
+      
+      {/* Timer display */}
+      <div className="timer-display">
+        Time left: <span className="time-value">{timeLeft}</span> seconds
       </div>
-      <p style={{ color: 'red' }}>{error}</p>
-    </form>
+      
+      <form className="login-form" onSubmit={handleSubmit}>
+        <label htmlFor="username">Username:</label>
+        <input
+          id="username"
+          type="text"
+          placeholder="Enter your username"
+          value={username}
+          required
+          onChange={(e) => setUsername(e.target.value)}
+        />
+
+        <label htmlFor="password">Password:</label>
+        <input
+          id="password"
+          type="password"
+          placeholder="Enter your password"
+          value={password}
+          required
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button type="submit" disabled={!isFormValid}>
+          Login
+        </button>
+      </form>
+    </div>
   );
-};
+}
 
 export default Login;
